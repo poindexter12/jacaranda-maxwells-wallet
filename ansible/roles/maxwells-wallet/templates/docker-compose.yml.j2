@@ -1,0 +1,91 @@
+---
+# Maxwell's Wallet Docker Compose
+# SWAG reverse proxy + Cloudflare Tunnel
+# Domain: {{ swag_subdomain }}.{{ swag_url }}
+# Image tag: {{ image_tag }}
+
+services:
+  # SWAG - Reverse proxy with Let's Encrypt + Cloudflare Tunnel
+  swag:
+    image: lscr.io/linuxserver/swag:latest
+    container_name: swag
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ={{ timezone | default('America/Denver') }}
+      - URL={{ swag_url }}
+      - SUBDOMAINS={{ swag_subdomain }}
+      - ONLY_SUBDOMAINS=true
+      - VALIDATION=dns
+      - DNSPLUGIN=cloudflare
+{% if swag_staging | default(true) %}
+      - STAGING=true
+{% endif %}
+      - DOCKER_MODS=linuxserver/mods:universal-cloudflared
+      - CF_REMOTE_MANAGE_TOKEN={{ cloudflare_tunnel_token }}
+      - FILE__CF_API_TOKEN=/config/secrets/cf_api_token
+    volumes:
+      - {{ app_data_dir }}/swag-config:/config
+      - {{ app_data_dir }}/nginx.conf:/config/nginx/site-confs/default.conf:ro
+    ports:
+      - "443:443"
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - app
+    depends_on:
+      app:
+        condition: service_healthy
+
+  # Maxwell's Wallet App
+  app:
+    image: {{ docker_registry }}/{{ docker_image }}:{{ image_tag }}
+    container_name: maxwells-wallet
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=sqlite+aiosqlite:////data/wallet.db
+{% if demo_mode | default(true) %}
+      - DEMO_MODE=true
+      - DEMO_RESET_INTERVAL_HOURS={{ demo_reset_interval_hours | default(1) }}
+{% endif %}
+      - BACKUP_DIR=/data/backups
+      - BACKUP_RETENTION={{ backup_retention | default(5) }}
+    volumes:
+      - {{ app_data_dir }}/data:/data
+    expose:
+      - "3000"
+      - "3001"
+    networks:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Watchtower - auto-updates containers when new images are pushed
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.44
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL={{ watchtower_poll_interval }}
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_SCOPE=maxwells-wallet
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+{% if github_token is defined %}
+      - /root/.docker/config.json:/config.json:ro
+{% endif %}
+    labels:
+      - "com.centurylinklabs.watchtower.scope=maxwells-wallet"
+
+networks:
+  app:
+    driver: bridge

@@ -1,0 +1,141 @@
+---
+# Maxwell's Wallet Deployment Tasks
+# Deploys to VMs with Docker pre-installed (template 103)
+
+# ============================================================================
+# Prerequisites
+# ============================================================================
+
+- name: Ensure Docker service is running
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Install Python Docker SDK (for Ansible docker modules)
+  ansible.builtin.apt:
+    name:
+      - python3-docker
+      - python3-requests
+    state: present
+    update_cache: true
+
+# ============================================================================
+# Network Configuration (fix asymmetric routing for mgmt access)
+# ============================================================================
+# VM default route is via transfer network (.11.x), but SSH access comes
+# from trusted network (.1.x) via mgmt network (.5.x). Without this route,
+# reply traffic goes out the wrong interface causing connection failures.
+
+- name: Add route for trusted network via mgmt gateway
+  ansible.builtin.command:
+    cmd: ip route add 192.168.1.0/24 via 192.168.5.1 dev ens19
+  register: route_result
+  changed_when: route_result.rc == 0
+  failed_when: false
+
+- name: Create persistent route via netplan
+  ansible.builtin.copy:
+    dest: /etc/netplan/99-mgmt-route.yaml
+    content: |
+      network:
+        version: 2
+        ethernets:
+          ens19:
+            routes:
+              - to: 192.168.1.0/24
+                via: 192.168.5.1
+    mode: "0600"
+  notify: Apply netplan
+
+# ============================================================================
+# Application Deployment
+# ============================================================================
+
+- name: Create application directory
+  ansible.builtin.file:
+    path: "{{ app_data_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Create data directory for SQLite persistence
+  ansible.builtin.file:
+    path: "{{ app_data_dir }}/data"
+    state: directory
+    mode: "0755"
+
+- name: Create SWAG config directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ app_data_dir }}/swag-config"
+    - "{{ app_data_dir }}/swag-config/dns-conf"
+    - "{{ app_data_dir }}/swag-config/secrets"
+
+- name: Create Cloudflare DNS credentials
+  ansible.builtin.copy:
+    dest: "{{ app_data_dir }}/swag-config/dns-conf/cloudflare.ini"
+    content: |
+      dns_cloudflare_api_token = {{ cloudflare_api_token }}
+    mode: "0600"
+  when: cloudflare_api_token is defined
+  notify: Restart maxwells-wallet
+
+- name: Create Cloudflare API token secret file
+  ansible.builtin.copy:
+    dest: "{{ app_data_dir }}/swag-config/secrets/cf_api_token"
+    content: "{{ cloudflare_api_token }}"
+    mode: "0600"
+  when: cloudflare_api_token is defined
+  notify: Restart maxwells-wallet
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ app_data_dir }}/docker-compose.yml"
+    mode: "0644"
+  notify: Restart maxwells-wallet
+
+- name: Deploy nginx.conf for SWAG
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ app_data_dir }}/nginx.conf"
+    mode: "0644"
+  notify: Restart maxwells-wallet
+
+- name: Login to GitHub Container Registry
+  community.docker.docker_login:
+    registry: "{{ docker_registry }}"
+    username: "{{ github_username }}"
+    password: "{{ github_token }}"
+  when: github_token is defined
+
+- name: Pull latest images
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_data_dir }}"
+    pull: always
+  register: pull_result
+
+- name: Start Maxwell's Wallet stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_data_dir }}"
+    state: present
+  register: compose_result
+
+- name: Wait for SWAG to initialize
+  ansible.builtin.wait_for:
+    port: 443
+    host: "127.0.0.1"
+    delay: 10
+    timeout: 120
+  ignore_errors: true
+
+- name: Display deployment status
+  ansible.builtin.debug:
+    msg: |
+      Maxwell's Wallet deployed successfully!
+      Domain: {{ domain }}
+      Image tag: {{ image_tag }}
+      SWAG URL: https://{{ swag_subdomain }}.{{ swag_url }}

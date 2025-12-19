@@ -1,0 +1,18 @@
+---
+# Maxwell's Wallet Handlers
+
+- name: Restart Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
+    enabled: true
+
+- name: Restart maxwells-wallet
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_data_dir }}"
+    state: restarted
+
+- name: Apply netplan
+  ansible.builtin.command:
+    cmd: netplan apply
+  changed_when: true

@@ -1,0 +1,34 @@
+---
+# Maxwell's Wallet Ansible Role Defaults
+
+# Docker image configuration
+docker_registry: ghcr.io
+docker_image: poindexter12/maxwells-wallet
+# image_tag is set per-host in inventory (latest or beta)
+
+# SWAG configuration
+swag_url: maxwellswallet.com
+# swag_subdomain is set per-host in inventory (demo or beta)
+swag_staging: true  # Use Let's Encrypt staging certs (set false for production)
+timezone: America/Denver
+
+# Demo mode settings
+demo_mode: true
+demo_reset_interval_hours: 1  # Reset data every N hours (0 = no reset)
+
+# Backup settings
+backup_retention: 5  # Number of backups to keep
+
+# Watchtower configuration
+watchtower_poll_interval: 300  # Check for updates every 5 minutes
+
+# GitHub Container Registry authentication
+github_username: poindexter12
+# github_token must be provided via -e for GHCR private images
+
+# Cloudflare
+# cloudflare_tunnel_token - provided via -e from 1Password
+# cloudflare_api_token - provided via -e from 1Password
+
+# Application data directory
+app_data_dir: /opt/maxwells-wallet

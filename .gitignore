@@ -1,0 +1,11 @@
+# Service-specific ignores (common patterns in repo root .gitignore)
+
+# Ansible logs (verbose output)
+ansible/logs/
+
+# Generated cloud-init files
+terraform/.generated/
+!terraform/.generated/.gitkeep
+
+# Keep inventory directory structure
+!ansible/inventory/.gitkeep
