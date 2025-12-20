@@ -135,10 +135,10 @@ output "dns_entries" {
       for name, inst in local.wallet_instances :
       "${name}.mgmt" => inst.mgmt_ip
     },
-    # Storage/transfer network (.11.x)
+    # Transfer network (.11.x)
     {
       for name, inst in local.wallet_instances :
-      "${name}.storage" => inst.transfer_ip
+      "${name}.transfer" => inst.transfer_ip
     }
   )
 }
