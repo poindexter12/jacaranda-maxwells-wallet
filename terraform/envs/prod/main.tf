@@ -102,8 +102,8 @@ module "wallet" {
   vm_template = "tmpl-ubuntu-2404-docker" # Template 1020 on everette
 
   vlans = {
-    transfer = local.base.vlans["storage"] # .11.x subnet (TODO: rename in base)
-    mgmt     = local.base.vlans["mgmt"]    # .5.x management network
+    transfer = local.base.vlans["transfer"] # .11.x subnet
+    mgmt     = local.base.vlans["mgmt"]     # .5.x management network
   }
 
   instances = local.wallet_instances

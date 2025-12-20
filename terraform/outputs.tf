@@ -26,6 +26,6 @@ output "dns_entries" {
   description = "DNS entries for Pi-hole"
   value = merge(
     { for name, inst in var.instances : "${name}.mgmt" => inst.mgmt_ip },
-    { for name, inst in var.instances : "${name}.storage" => inst.transfer_ip }
+    { for name, inst in var.instances : "${name}.transfer" => inst.transfer_ip }
   )
 }
