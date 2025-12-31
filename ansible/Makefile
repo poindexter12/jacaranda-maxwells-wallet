@@ -11,9 +11,9 @@ PLAYBOOK = playbooks/deploy.yaml
 # 1Password items
 OP_VAULT = Homelab
 
-# DNS hostnames (resolved via Pi-hole .mgmt zone)
-HOST_DEMO = maxwells-wallet-demo.mgmt
-HOST_BETA = maxwells-wallet-beta.mgmt
+# DNS hostnames (resolved via Pi-hole .lan zone)
+HOST_DEMO = maxwells-wallet-demo.lan
+HOST_BETA = maxwells-wallet-beta.lan
 
 .PHONY: help deploy deploy-demo deploy-beta logs validate clean-containers
 
