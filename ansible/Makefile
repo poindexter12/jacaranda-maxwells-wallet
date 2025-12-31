@@ -46,19 +46,19 @@ deploy-beta: ## Deploy beta only
 logs: ## View container logs (all hosts)
 	@for host in $(HOST_DEMO) $(HOST_BETA); do \
 		echo "=== $$host ==="; \
-		ssh -i ~/.ssh/jacaranda ubuntu@$$host "docker ps --format 'table {{.Names}}\t{{.Status}}'" 2>/dev/null || echo "  not reachable"; \
+		ssh ubuntu@$$host "docker ps --format 'table {{.Names}}\t{{.Status}}'" 2>/dev/null || echo "  not reachable"; \
 	done
 
 validate: ## Verify deployments are healthy
 	@echo "=== Checking Maxwell's Wallet deployments ==="
 	@for host in $(HOST_DEMO) $(HOST_BETA); do \
 		echo "--- $$host ---"; \
-		ssh -i ~/.ssh/jacaranda ubuntu@$$host "docker ps --format '{{.Names}}: {{.Status}}'" 2>/dev/null || echo "  not reachable"; \
+		ssh ubuntu@$$host "docker ps --format '{{.Names}}: {{.Status}}'" 2>/dev/null || echo "  not reachable"; \
 		echo ""; \
 	done
 
 clean-containers: ## Stop and remove all containers (for fresh deploy)
 	@for host in $(HOST_DEMO) $(HOST_BETA); do \
 		echo "=== Cleaning $$host ==="; \
-		ssh -i ~/.ssh/jacaranda ubuntu@$$host "cd /opt/maxwells-wallet && docker compose down -v 2>/dev/null || true"; \
+		ssh ubuntu@$$host "cd /opt/maxwells-wallet && docker compose down -v 2>/dev/null || true"; \
 	done

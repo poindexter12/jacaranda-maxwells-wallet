@@ -140,8 +140,7 @@ locals {
         maxwells_wallet = { hosts = local.hosts }
       }
       vars = {
-        ansible_user                 = var.cloud_init_user
-        ansible_ssh_private_key_file = "~/.ssh/jacaranda"
+        ansible_user = var.cloud_init_user
       }
     }
   }
