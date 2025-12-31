@@ -11,6 +11,8 @@ services:
     container_name: swag
     cap_add:
       - NET_ADMIN
+    labels:
+      - "com.centurylinklabs.watchtower.scope=maxwells-wallet"
     environment:
       - PUID=1000
       - PGID=1000
@@ -44,6 +46,8 @@ services:
     image: {{ docker_registry }}/{{ docker_image }}:{{ image_tag }}
     container_name: maxwells-wallet
     restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.scope=maxwells-wallet"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=sqlite+aiosqlite:////data/wallet.db
