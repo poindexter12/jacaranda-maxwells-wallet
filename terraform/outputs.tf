@@ -29,3 +29,14 @@ output "dns_entries" {
     { for name, inst in var.instances : "${name}.transfer" => inst.transfer_ip }
   )
 }
+
+output "cname_entries" {
+  description = "CNAME entries for Pi-hole (bare name → .lan → .mgmt)"
+  value = merge(
+    # .lan entries: recognized TLD → network-specific canonical name
+    # macOS resolver requires recognized TLD; .mgmt/.transfer don't work without /etc/resolver config
+    { for name, inst in var.instances : "${name}.lan" => "${name}.mgmt" },
+    # Bare entries: convenient naked names → .lan
+    { for name, inst in var.instances : name => "${name}.lan" }
+  )
+}
