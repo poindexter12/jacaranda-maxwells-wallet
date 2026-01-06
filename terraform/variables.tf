@@ -100,3 +100,16 @@ variable "ssh_public_key" {
   description = "SSH public key for access"
   type        = string
 }
+
+variable "ssh_user_ca_pubkey" {
+  description = "SSH User CA public key for certificate authentication"
+  type        = string
+  default     = ""
+}
+
+variable "cloud_init_password_hash" {
+  description = "Cloud-init password hash (generated with mkpasswd)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}

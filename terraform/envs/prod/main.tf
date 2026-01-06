@@ -98,6 +98,10 @@ module "wallet" {
   dns_primary    = local.base.dns_primary
   onboot         = true
 
+  # SSH CA - User CA baked into cloud-init for cert authentication
+  ssh_user_ca_pubkey       = local.base.ssh_user_ca_pubkey
+  cloud_init_password_hash = local.base.cloud_init_password_hash
+
   # VM configuration
   vm_template = "tmpl-ubuntu-2404-docker" # Template 1020 on everette
 
@@ -141,4 +145,9 @@ output "dns_entries" {
       "${name}.transfer" => inst.transfer_ip
     }
   )
+}
+
+output "cname_entries" {
+  description = "CNAME entries for Pi-hole (bare → .lan → .mgmt)"
+  value       = module.wallet.cname_entries
 }

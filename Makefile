@@ -38,10 +38,7 @@ prod-destroy: ## Destroy VMs
 prod-deploy: ## Deploy app to all VMs (Ansible)
 	@$(MAKE) -C ansible deploy
 
-prod-full: prod-apply ## Create VMs + wait + deploy
-	@echo ""
-	@echo "=== Waiting for VMs to boot (45s) ==="
-	@sleep 45
+prod-full: prod-apply ## Create VMs (cert signing included) + deploy
 	@$(MAKE) prod-deploy
 
 prod-validate: ## Check deployment health
