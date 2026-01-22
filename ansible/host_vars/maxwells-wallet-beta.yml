@@ -1,0 +1,6 @@
+---
+# Beta environment - development builds
+wallet_env: beta
+domain: beta.maxwellswallet.com
+swag_subdomain: beta
+image_tag: beta

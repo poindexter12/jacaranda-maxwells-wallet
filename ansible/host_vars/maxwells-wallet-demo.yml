@@ -1,0 +1,6 @@
+---
+# Demo environment - stable releases
+wallet_env: demo
+domain: demo.maxwellswallet.com
+swag_subdomain: demo
+image_tag: latest

@@ -5,6 +5,9 @@
 
 .DEFAULT_GOAL := help
 
+# Include common.mk for UV_RUN
+include ../../../infrastructure/ansible/common.mk
+
 ANSIBLE_CFG = ansible.cfg
 PLAYBOOK = playbooks/deploy.yaml
 
@@ -16,17 +19,6 @@ HOST_DEMO = maxwells-wallet-demo.lan
 HOST_BETA = maxwells-wallet-beta.lan
 
 .PHONY: help deploy deploy-demo deploy-beta logs validate clean-containers
-.PHONY: prod-sign-certs prod-sign-certs-initial
-
-##@ SSH CA
-
-prod-sign-certs: ## Sign host certificates for prod (cert auth already working)
-	@$(MAKE) -C ../../../ansible sign-certs INVENTORY=$(CURDIR)/inventory/prod.yaml
-
-prod-sign-certs-initial: ## Sign host certs for new VMs (User CA baked in, host cert not yet signed)
-	@echo "=== Initial signing: cert-only VMs (accepting host keys) ==="
-	@$(MAKE) -C ../../../ansible sign-certs INVENTORY=$(CURDIR)/inventory/prod.yaml \
-		EXTRA_ARGS="--extra-vars 'initial_signing=true'"
 
 ##@ Help
 
@@ -34,14 +26,14 @@ help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 deploy: ## Deploy to all hosts (demo + beta)
-	@ANSIBLE_CONFIG=$(ANSIBLE_CFG) ansible-playbook $(PLAYBOOK) \
+	@ANSIBLE_CONFIG=$(ANSIBLE_CFG) $(UV_RUN) ansible-playbook $(PLAYBOOK) \
 		-e "github_token=$$(op read 'op://$(OP_VAULT)/github/pat')" \
 		-e "cloudflare_api_token=$$(op read 'op://$(OP_VAULT)/cloudflare-maxwells-wallet/api-token')" \
 		-e "cloudflare_tunnel_token_demo=$$(op read 'op://$(OP_VAULT)/maxwells-wallet-demo/password')" \
 		-e "cloudflare_tunnel_token_beta=$$(op read 'op://$(OP_VAULT)/maxwells-wallet-beta/password')"
 
 deploy-demo: ## Deploy demo only
-	@ANSIBLE_CONFIG=$(ANSIBLE_CFG) ansible-playbook $(PLAYBOOK) \
+	@ANSIBLE_CONFIG=$(ANSIBLE_CFG) $(UV_RUN) ansible-playbook $(PLAYBOOK) \
 		--limit maxwells-wallet-demo \
 		-e "github_token=$$(op read 'op://$(OP_VAULT)/github/pat')" \
 		-e "cloudflare_api_token=$$(op read 'op://$(OP_VAULT)/cloudflare-maxwells-wallet/api-token')" \
@@ -49,7 +41,7 @@ deploy-demo: ## Deploy demo only
 		-e "cloudflare_tunnel_token_beta=''"
 
 deploy-beta: ## Deploy beta only
-	@ANSIBLE_CONFIG=$(ANSIBLE_CFG) ansible-playbook $(PLAYBOOK) \
+	@ANSIBLE_CONFIG=$(ANSIBLE_CFG) $(UV_RUN) ansible-playbook $(PLAYBOOK) \
 		--limit maxwells-wallet-beta \
 		-e "github_token=$$(op read 'op://$(OP_VAULT)/github/pat')" \
 		-e "cloudflare_api_token=$$(op read 'op://$(OP_VAULT)/cloudflare-maxwells-wallet/api-token')" \

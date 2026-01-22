@@ -2,15 +2,17 @@
 # Maxwell's Wallet Production Environment
 # ============================================================================
 # Two VMs hosting demo and beta versions of Maxwell's Wallet.
-# Both use Docker-in-Docker with cloudflared tunnels for external access.
+# Both use Docker with cloudflared tunnels for external access.
 # Watchtower handles automatic image updates.
 #
 # VMID Allocation: 1070-1071 (4-digit TSSS: 1xxx + IP octet)
-# Reference: .claude/skills/vmid-allocation/SKILL.md
+# Reference: .claude/skills/vmid-allocation.md
 #
 # Domains:
 #   - demo.maxwellswallet.com (stable releases, :latest tag)
 #   - beta.maxwellswallet.com (dev builds, :beta tag)
+#
+# Uses reusable VM module with automatic SSH CA integration.
 
 terraform {
   required_version = ">= 1.0"
@@ -40,41 +42,6 @@ locals {
 }
 
 # ============================================================================
-# VMID Allocation Reference
-# ============================================================================
-
-module "vmid" {
-  source = "../../../../../infrastructure/terraform/modules/vmid-ranges"
-}
-
-# Note: VMIDs 1070-1071 are in the 1xxx range (originally LXC allocation)
-# Keeping same VMIDs for consistency even though we're using VMs now
-
-locals {
-  # 4-digit TSSS pattern: VMID = 1000 + IP_octet
-  wallet_instances = {
-    "maxwells-wallet-demo" = {
-      vmid        = 1070 # 1000 + 70 → IP .70
-      node        = "joseph"
-      transfer_ip = "192.168.11.70"
-      mgmt_ip     = "192.168.5.70" # Management network
-      environment = "demo"
-      domain      = "demo.maxwellswallet.com"
-      image_tag   = "latest" # Stable releases
-    }
-    "maxwells-wallet-beta" = {
-      vmid        = 1071 # 1000 + 71 → IP .71
-      node        = "maxwell"
-      transfer_ip = "192.168.11.71"
-      mgmt_ip     = "192.168.5.71" # Management network
-      environment = "beta"
-      domain      = "beta.maxwellswallet.com"
-      image_tag   = "beta" # Dev builds from beta tag
-    }
-  }
-}
-
-# ============================================================================
 # Provider Configuration
 # ============================================================================
 
@@ -87,30 +54,57 @@ provider "proxmox" {
 }
 
 # ============================================================================
-# Maxwell's Wallet Module
+# Instance Configuration
+# ============================================================================
+# Infrastructure only - application config in Ansible host_vars/
+
+locals {
+  instances = {
+    "maxwells-wallet-demo" = {
+      vmid        = 1070
+      node        = "joseph"
+      mgmt_ip     = "192.168.5.70"
+      transfer_ip = "192.168.11.70"
+    }
+    "maxwells-wallet-beta" = {
+      vmid        = 1071
+      node        = "maxwell"
+      mgmt_ip     = "192.168.5.71"
+      transfer_ip = "192.168.11.71"
+    }
+  }
+}
+
+# ============================================================================
+# Maxwell's Wallet VMs (Reusable Module)
 # ============================================================================
 
 module "wallet" {
-  source = "../.."
+  source = "../../../../../infrastructure/terraform/modules/vm"
 
-  env            = "prod"
-  ssh_public_key = local.base.ssh_public_key
-  dns_primary    = local.base.dns_primary
-  onboot         = true
+  name     = "maxwells-wallet"
+  template = "tmpl-ubuntu-2404-docker"
+  env      = "prod"
+  vlans    = local.base.vlans
 
-  # SSH CA - User CA baked into cloud-init for cert authentication
+  # SSH CA configuration
   ssh_user_ca_pubkey       = local.base.ssh_user_ca_pubkey
   cloud_init_password_hash = local.base.cloud_init_password_hash
+  dns_server               = local.base.dns_primary
 
-  # VM configuration
-  vm_template = "tmpl-ubuntu-2404-docker" # Template 1020 on everette
+  # VM instances (infrastructure only)
+  instances = local.instances
 
-  vlans = {
-    transfer = local.base.vlans["transfer"] # .11.x subnet
-    mgmt     = local.base.vlans["mgmt"]     # .5.x management network
-  }
+  # Resources
+  cores        = 1
+  memory       = 1024
+  os_storage   = "ceph-seymour"
+  os_disk_size = "20G"
+  onboot       = true
 
-  instances = local.wallet_instances
+  # Use module's inventory generation (app config in Ansible host_vars/)
+  ansible_inventory_path = "${path.module}/../../../ansible/inventory/prod.yaml"
+  ansible_group_name     = "maxwells_wallet"
 }
 
 # ============================================================================
@@ -124,30 +118,19 @@ output "instances" {
 
 output "inventory_file" {
   description = "Generated Ansible inventory path"
-  value       = module.wallet.inventory_file
+  value       = module.wallet.ansible_inventory_path
 }
 
 # ============================================================================
-# DNS Entries (exported for infrastructure/dns to create in Pi-hole)
+# DNS Entries (exported for Pi-hole)
 # ============================================================================
 
 output "dns_entries" {
-  description = "A record entries for Pi-hole (hostname.network → IP)"
-  value = merge(
-    # Management network (.5.x) - SSH, monitoring
-    {
-      for name, inst in local.wallet_instances :
-      "${name}.mgmt" => inst.mgmt_ip
-    },
-    # Transfer network (.11.x)
-    {
-      for name, inst in local.wallet_instances :
-      "${name}.transfer" => inst.transfer_ip
-    }
-  )
+  description = "DNS A record entries for Pi-hole"
+  value       = module.wallet.dns_entries
 }
 
 output "cname_entries" {
-  description = "CNAME entries for Pi-hole (bare → .lan → .mgmt)"
+  description = "CNAME entries for Pi-hole"
   value       = module.wallet.cname_entries
 }
