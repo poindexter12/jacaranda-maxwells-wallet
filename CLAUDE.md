@@ -22,14 +22,14 @@ make prod-destroy      # Destroy VMs
 **Two VMs hosting different versions:**
 
 | Hostname | VMID | Node | Transfer IP | Mgmt IP | Domain | Image Tag |
-|----------|------|------|-------------|---------|--------|-----------|
+| ---------- | ------ | ------ | ------------- | --------- | -------- | ----------- |
 | maxwells-wallet-demo | 1070 | joseph | 192.168.11.70 | 192.168.5.70 | demo.maxwellswallet.com | `:latest` |
 | maxwells-wallet-beta | 1071 | maxwell | 192.168.11.71 | 192.168.5.71 | beta.maxwellswallet.com | `:beta` |
 
 **VM Resources:**
 
 | Resource | Value |
-|----------|-------|
+| ---------- | ------- |
 | Template | tmpl-ubuntu-2404-docker (1020) |
 | CPU | 1 core |
 | Memory | 1024 MB |
@@ -44,7 +44,7 @@ work reliably in LXC containers, even with nesting and privileged mode enabled.
 **Components per VM:**
 
 | Container | Purpose |
-|-----------|---------|
+| ----------- | --------- |
 | swag | SWAG reverse proxy + Cloudflare Tunnel (via universal-cloudflared mod) |
 | maxwells-wallet | Next.js app with embedded backend |
 | watchtower | Auto-updates containers on new images |
@@ -110,7 +110,7 @@ services/maxwells-wallet/
 **1Password Items Required:**
 
 | Item | Field | Purpose |
-|------|-------|---------|
+| ------ | ------- | --------- |
 | `maxwells-wallet-demo` | `password` | Cloudflare tunnel token for demo |
 | `maxwells-wallet-beta` | `password` | Cloudflare tunnel token for beta |
 | `cloudflare-maxwells-wallet` | `api-token` | DNS validation for Let's Encrypt |
@@ -168,7 +168,7 @@ make deploy-beta      # Beta only
 ## Auto-Update Behavior
 
 | Instance | Image Tag | Updates When |
-|----------|-----------|--------------|
+| ---------- | ----------- | -------------- |
 | maxwells-wallet-demo | `:latest` | New release published (v*.*.*) |
 | maxwells-wallet-beta | `:beta` | New beta tag pushed |
 
@@ -302,7 +302,7 @@ ssh ubuntu@192.168.5.70 "docker logs swag 2>&1 | grep -i cert"
 ## Related Documentation
 
 | Topic | Location |
-|-------|----------|
+| ------- | ---------- |
 | Services pattern | `services/CLAUDE.md` |
 | VMID allocation | `.claude/skills/vmid-allocation/SKILL.md` |
 | Ingress (similar pattern) | `services/ingress/CLAUDE.md` |
