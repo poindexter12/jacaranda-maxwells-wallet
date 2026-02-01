@@ -96,7 +96,8 @@ deploy-beta:
 # Validation
 # ============================================================================
 
-# Verify DNS and SSH connectivity (preflight check)
+# Preflight: DNS and SSH connectivity
+[private]
 verify:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -118,7 +119,7 @@ verify:
     done
 
 # Validate deployment health (fast checks)
-validate:
+validate: verify
     #!/usr/bin/env bash
     set -euo pipefail
     printf '%b=== Testing Maxwell'\''s Wallet (prod) ===%b\n' '{{ BOLD }}' '{{ NC }}'
