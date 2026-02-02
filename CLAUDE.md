@@ -10,11 +10,11 @@
 
 ```bash
 cd services/maxwells-wallet
-make help              # Show all commands
-make check-secrets     # Verify 1Password items exist
-make prod-full         # Create VMs + deploy
-make prod-validate     # Check deployment health
-make prod-destroy      # Destroy VMs
+just --list              # Show all commands
+just check-secrets     # Verify 1Password items exist
+just prod::full         # Create VMs + deploy
+just prod::validate     # Check deployment health
+just prod::destroy      # Destroy VMs
 ```
 
 ## Architecture
@@ -141,16 +141,16 @@ cd services/maxwells-wallet
 # (see "Creating Tunnel Tokens" above)
 
 # 2. Verify secrets exist
-make check-secrets
+just check-secrets
 
 # 3. Initialize OpenTofu
-make prod-init
+just prod::init
 
 # 4. Create VMs + deploy
-make prod-full
+just prod::full
 
 # 5. Verify deployment
-make prod-validate
+just prod::validate
 ```
 
 ### Update Deployments
@@ -160,9 +160,9 @@ Watchtower handles automatic updates when new images are pushed to GHCR.
 **Manual redeploy:**
 
 ```bash
-make prod-deploy      # Both
-make deploy-demo      # Demo only
-make deploy-beta      # Beta only
+just prod::deploy      # Both
+just deploy-demo      # Demo only
+just deploy-beta      # Beta only
 ```
 
 ## Auto-Update Behavior
@@ -189,7 +189,7 @@ Configure in Cloudflare Dashboard → Security → WAF → Rate limiting rules:
 ### Check Container Status
 
 ```bash
-make prod-validate
+just prod::validate
 
 # Or SSH directly (note: user is ubuntu, not root)
 ssh ubuntu@192.168.5.70 "docker ps"
@@ -199,7 +199,7 @@ ssh ubuntu@192.168.5.71 "docker ps"
 ### View Logs
 
 ```bash
-make prod-logs
+just prod::logs
 
 # Or specific container
 ssh ubuntu@192.168.5.70 "docker logs maxwells-wallet --tail 50"
@@ -286,7 +286,7 @@ ssh ubuntu@192.168.5.70 "docker logs swag 2>&1 | grep -i cert"
 ### DO
 
 - Configure rate limiting in Cloudflare Dashboard
-- Use `make check-secrets` before first deployment
+- Use `just check-secrets` before first deployment
 - Let Watchtower handle updates automatically
 - SSH via mgmt network (192.168.5.x) or transfer network (192.168.11.x)
 - Use Cloudflare Tunnel public hostname pointing to `http://localhost:80` (SWAG nginx)
