@@ -10,8 +10,7 @@
 #   just prod::deploy-demo     # Deploy demo.maxwellswallet.com only
 #   just prod::deploy-beta     # Deploy beta.maxwellswallet.com only
 #   just prod::full            # Apply + deploy
-#   just prod::validate        # Check deployment health
-#   just prod::verify          # Check DNS and SSH (preflight)
+#   just prod::validate        # Check deployment health (includes preflight)
 #   just prod::logs            # Show container logs
 
 import '../../infrastructure/just/terraform.just'
