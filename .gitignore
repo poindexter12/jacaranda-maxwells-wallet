@@ -1,11 +1,23 @@
-# Service-specific ignores (common patterns in repo root .gitignore)
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
 
-# Ansible logs (verbose output)
+# Ansible
 ansible/logs/
+*.retry
 
-# Generated cloud-init files
-terraform/.generated/
-!terraform/.generated/.gitkeep
+# Secrets
+.mise.local.toml
+.envrc.secrets
 
-# Keep inventory directory structure
-!ansible/inventory/.gitkeep
+# Python
+__pycache__/
+*.pyc
+.venv/
+uv.lock
+
+# mise
+.mise.local.toml
