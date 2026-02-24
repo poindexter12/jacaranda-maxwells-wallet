@@ -19,6 +19,15 @@ import 'lib/infrastructure/just/secrets.just'
 # Module declaration
 mod prod
 
+# Upgrade OpenTofu providers to latest versions
+upgrade:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    printf '%b─── Upgrading OpenTofu providers ───%b\n' '{{ BOLD }}' '{{ NC }}'
+    cd terraform/envs/prod
+    tofu init -upgrade
+    printf '%b✓ Providers upgraded%b\n' '{{ GREEN }}' '{{ NC }}'
+
 # Show available recipes
 @_default:
     just --list
