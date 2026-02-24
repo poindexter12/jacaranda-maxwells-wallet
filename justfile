@@ -13,8 +13,8 @@
 #   just prod::validate          # Check deployment health
 #   just check-secrets           # Verify 1Password items exist
 
-import '../../lib/infrastructure/just/styles.just'
-import '../../lib/infrastructure/just/secrets.just'
+import 'lib/infrastructure/just/styles.just'
+import 'lib/infrastructure/just/secrets.just'
 
 # Module declaration
 mod prod

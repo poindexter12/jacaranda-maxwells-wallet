@@ -13,8 +13,8 @@
 #   just prod::validate        # Check deployment health (includes preflight)
 #   just prod::logs            # Show container logs
 
-import '../../lib/infrastructure/just/terraform.just'
-import '../../lib/infrastructure/just/ansible.just'
+import 'lib/infrastructure/just/terraform.just'
+import 'lib/infrastructure/just/ansible.just'
 
 # ============================================================================
 # Terraform Operations

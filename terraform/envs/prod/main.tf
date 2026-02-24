@@ -6,13 +6,11 @@
 # Watchtower handles automatic image updates.
 #
 # VMID Allocation: 1070-1071 (4-digit TSSS: 1xxx + IP octet)
-# Reference: .claude/skills/vmid-allocation.md
+# Reference: .claude/skills/vmid-allocation/SKILL.md
 #
 # Domains:
 #   - demo.maxwellswallet.com (stable releases, :latest tag)
 #   - beta.maxwellswallet.com (dev builds, :beta tag)
-#
-# Uses reusable VM module with automatic SSH CA integration.
 
 terraform {
   required_version = ">= 1.0"
@@ -26,19 +24,18 @@ terraform {
 }
 
 # ============================================================================
-# Base Infrastructure
+# Base Infrastructure Module
 # ============================================================================
 
-data "terraform_remote_state" "base" {
-  backend = "local"
+module "base_infra" {
+  source = "git::https://github.com/poindexter12/jacaranda-shared-libs.git//infrastructure/terraform/modules/base-infra?ref=v1.4.0"
 
-  config = {
-    path = "../../../../../infrastructure/terraform/terraform.tfstate"
-  }
+  # Path to hub state file (sibling repo convention)
+  hub_state_path = "../../../../../jacaranda-infra/infrastructure/terraform/terraform.tfstate"
 }
 
 locals {
-  base = data.terraform_remote_state.base.outputs
+  base = module.base_infra
 }
 
 # ============================================================================
@@ -56,7 +53,6 @@ provider "proxmox" {
 # ============================================================================
 # Instance Configuration
 # ============================================================================
-# Infrastructure only - application config in Ansible host_vars/
 
 locals {
   instances = {
@@ -76,11 +72,11 @@ locals {
 }
 
 # ============================================================================
-# Maxwell's Wallet VMs (Reusable Module)
+# Maxwell's Wallet VMs (Shared VM Module via lib/)
 # ============================================================================
 
 module "wallet" {
-  source = "../../../../../infrastructure/terraform/modules/vm"
+  source = "../../../lib/infrastructure/terraform/modules/vm"
 
   name     = "maxwells-wallet"
   template = "tmpl-ubuntu-2404-docker"
